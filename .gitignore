@@ -1,2 +1,11 @@
+# Data files
+data/
+
+# Credential file
+.creds
+
+# Compiled Python
 *.pyc
+
+# Pycharm files
 *.idea
