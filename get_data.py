@@ -7,6 +7,7 @@ import sys
 
 __author__ = 'colinc'
 
+#This file should live in the top level directory, or else this line should change
 PREFIX = os.path.dirname(os.path.abspath(__file__))
 
 DATAFILES = [
@@ -22,19 +23,27 @@ DATAFILES = [
     },
 ]
 
-HEADERS = {
-    'User-agent': 'Mozilla/5.0 (Windows; U; Windows NT 5.1; de; rv:1.9.1.5) Gecko/20091102 Firefox/3.5.5'
-}
 
-
-def __main():
+def get_data_files():
+    """ Downloads data files located in the pseudo JSON up in DATAFILES.  Also
+    creates a folder to store all the data.  Returns a dictionary of 'name' to
+    'filename' (which is all fancied up so you can just call open(filename) on
+    it).
+    """
+    # TODO: fix this function.  Right now it comes down with strange headers.
     if not os.path.exists(os.path.join(PREFIX, 'data')):
         os.mkdir(os.path.join(PREFIX, 'data'))
     for data_file in DATAFILES:
-        filename = os.path.join(PREFIX, data_file['filename'])
+        filename = os.path.join(PREFIX, 'data', data_file['filename'])
         if not os.path.exists(filename):
             urllib.urlretrieve(data_file['url'], filename)
-    return {file['name']: file['filename'] for file in DATAFILES}
+    return {file['name']: os.path.join(PREFIX, 'data', file['filename']) for file in DATAFILES}
+
+
+def __main():
+    """ For running from the command line
+    """
+    print(get_data_files())
 
 
 if __name__ == '__main__':
