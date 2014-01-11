@@ -7,7 +7,7 @@ import sys
 
 __author__ = 'colinc'
 
-PREFIX = os.path.realpath(__name__)
+PREFIX = os.path.dirname(os.path.abspath(__file__))
 
 DATAFILES = [
     {
@@ -22,6 +22,10 @@ DATAFILES = [
     },
 ]
 
+HEADERS = {
+    'User-agent': 'Mozilla/5.0 (Windows; U; Windows NT 5.1; de; rv:1.9.1.5) Gecko/20091102 Firefox/3.5.5'
+}
+
 
 def __main():
     if not os.path.exists(os.path.join(PREFIX, 'data')):
@@ -31,6 +35,7 @@ def __main():
         if not os.path.exists(filename):
             urllib.urlretrieve(data_file['url'], filename)
     return {file['name']: file['filename'] for file in DATAFILES}
+
 
 if __name__ == '__main__':
     sys.exit(__main())
