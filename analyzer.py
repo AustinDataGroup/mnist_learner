@@ -4,6 +4,7 @@ __author__ = 'colinc'
 
 import matplotlib.pyplot as plt
 import numpy as np
+from sklearn.ensemble import RandomForestClassifier
 
 import get_data
 
@@ -38,6 +39,11 @@ class FileHandler:
         row_num = np.random.randint(0, len(self.digits))
         self.digits[row_num].show()
 
+    def features(self):
+        return np.array([pixel.features() for pixel in self.digits])
+
+    def labels(self):
+        return np.array([pixel.label for pixel in self.digits])
 
 class Digit:
     def __init__(self, data, digit_label=None):
@@ -60,12 +66,31 @@ class Digit:
         """
         return self.data.mean()
 
+    def features(self):
+        """ Gathers up a feature set for the digits and delivers a single numpy array
+        """
+        return np.array(list(self.data.flatten()) + [self.ink()])
+
+
+def normalize(matrix):
+    """ Normalizes a matrix, subtracting the mean of each column and dividing by the range
+    of values
+    """
+    return (matrix - matrix.mean(0)) / (matrix.max() - matrix.min())
+
+
+def train_model():
+    data = get_data.get_data_files()
+    files = FileHandler(data['train'])
+    clf = RandomForestClassifier(n_estimators=100, oob_score=True)
+    clf = clf.fit(normalize(files.features()), files.labels())
+    return clf
+
 
 def __main():
     data = get_data.get_data_files()
     files = FileHandler(data['train'], 20)
-    for digit in files.digits:
-        print(digit.ink(), digit.label)
+    print normalize(files.labels())
 
 
 if __name__ == '__main__':
