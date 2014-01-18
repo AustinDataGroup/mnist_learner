@@ -6,6 +6,7 @@ __author__ = 'colinc'
 import matplotlib.pyplot as plt
 import numpy as np
 from sklearn.ensemble import RandomForestClassifier
+from sklearn.linear_model import LogisticRegression
 from mpl_toolkits.axes_grid1 import ImageGrid
 
 import get_data
@@ -21,6 +22,7 @@ class FileHandler:
         self.filename = filename
         self.digits = self.__read_file(n_to_load)
         self._rf_clf = None
+        self._lr_clf = None
 
     def __read_file(self, n_lines=None):
         all_data = []
@@ -44,11 +46,20 @@ class FileHandler:
 
     @property
     def features(self):
-        return np.array([pixel.features for pixel in self.digits])
+        return normalize(np.array([pixel.features for pixel in self.digits]))
 
     @property
     def labels(self):
         return np.array([pixel.label for pixel in self.digits])
+
+    @property
+    def lr_clf(self):
+        """ Trains and returns a random forest classifier
+        """
+        if not self._lr_clf:
+            self._lr_clf = LogisticRegression()
+            self._lr_clf = self._rf_clf.fit(self.features, self.labels)
+        return self._lr_clf
 
     @property
     def rf_clf(self):
@@ -56,15 +67,19 @@ class FileHandler:
         """
         if not self._rf_clf:
             self._rf_clf = RandomForestClassifier(n_estimators=100, oob_score=True)
-            self._rf_clf = self._rf_clf.fit(normalize(self.features), self.labels)
+            self._rf_clf = self._rf_clf.fit(self.features, self.labels)
         return self._rf_clf
 
     def show_bad_classifiers(self):
         """Displays a grid of up to 16 incorrectly classified examples
         """
         print("Model OOB score: {:.2f}%".format(100 * self.rf_clf.oob_score_))
-        predictions = self.rf_clf.predict(self.features)
-        misclassified = [self.digits[j] for j in range(len(self.digits)) if predictions[j] != self.labels[j]]
+        predictions = np.argmax(self.rf_clf.oob_decision_function_, 1)
+
+        for j in range(predictions.shape[0]):
+            self.digits[j].prediction = predictions[j]
+
+        misclassified = [digit for digit in self.digits if digit.prediction != digit.label]
         print("Misclassified {:d} examples".format(len(misclassified)))
         misclassified = random.sample(misclassified, min(16, len(misclassified)))
         fig = plt.figure(1, (4., 4.))
@@ -72,10 +87,10 @@ class FileHandler:
                          axes_pad=0.1)
         for j, pixel in enumerate(misclassified):
             grid[j].imshow(pixel.data, cmap=plt.cm.binary)
-            print("({:d}, {:d}: Predicted {:d}, actually {:d}".format(
+            print("({:d}, {:d}): Predicted {:d}, actually {:d}".format(
                 j // 4 + 1,
                 j % 4 + 1,
-                self.rf_clf.predict(pixel.features)[0],
+                pixel.prediction,
                 pixel.label))
 
         plt.show()
@@ -85,6 +100,7 @@ class Digit:
     def __init__(self, data, digit_label=None):
         self.data = data
         self.label = digit_label
+        self.prediction = "None"
 
     def __repr__(self):
         if self.label:
