@@ -18,16 +18,19 @@ class FileHandler:
     """ A class that will read in a data filename, and hold onto training examples
     """
 
-    def __init__(self, filename, n_to_load=None):
-        self.filename = filename
-        self.digits = self.__read_file(n_to_load)
+    def __init__(self, train_filename, test_filename, n_to_load=None):
+        self.train_filename = train_filename
+        self.test_filename = test_filename
+        self.train_digits = self.__read_file(self.train_filename, n_to_load)
+        self.test_digits = self.__read_file(self.test_filename)
         self._rf_clf = None
         self._lr_clf = None
 
-    def __read_file(self, n_lines=None):
+    @staticmethod
+    def __read_file(filename, n_lines=None):
         all_data = []
         has_labels = False
-        with open(self.filename) as buff:
+        with open(filename) as buff:
             row = buff.next().split(',')
             if len(row) != MNIST_SIZE[0] * MNIST_SIZE[1]:
                 has_labels = True
@@ -41,16 +44,17 @@ class FileHandler:
         return all_data
 
     def print_random_example(self):
-        row_num = np.random.randint(0, len(self.digits))
-        self.digits[row_num].show()
+        row_num = np.random.randint(0, len(self.train_digits))
+        self.train_digits[row_num].show()
 
-    @property
-    def features(self):
-        return normalize(np.array([pixel.features for pixel in self.digits]))
+    def features(self, data_set='train'):
+        if data_set == 'train':
+            return normalize(np.array([pixel.features for pixel in self.train_digits]))
+        return normalize(np.array([pixel.features for pixel in self.test_digits]))
 
     @property
     def labels(self):
-        return np.array([pixel.label for pixel in self.digits])
+        return np.array([pixel.label for pixel in self.train_digits])
 
     @property
     def lr_clf(self):
@@ -58,7 +62,7 @@ class FileHandler:
         """
         if not self._lr_clf:
             self._lr_clf = LogisticRegression()
-            self._lr_clf = self._rf_clf.fit(self.features, self.labels)
+            self._lr_clf = self._lr_clf.fit(self.features(), self.labels)
         return self._lr_clf
 
     @property
@@ -67,7 +71,7 @@ class FileHandler:
         """
         if not self._rf_clf:
             self._rf_clf = RandomForestClassifier(n_estimators=100, oob_score=True)
-            self._rf_clf = self._rf_clf.fit(self.features, self.labels)
+            self._rf_clf = self._rf_clf.fit(self.features(), self.labels)
         return self._rf_clf
 
     def show_bad_classifiers(self):
@@ -77,9 +81,10 @@ class FileHandler:
         predictions = np.argmax(self.rf_clf.oob_decision_function_, 1)
 
         for j in range(predictions.shape[0]):
-            self.digits[j].prediction = predictions[j]
+            self.train_digits[j].prediction = predictions[j]
+            self.train_digits[j].decision_function = self.rf_clf.oob_decision_function_[j, :]
 
-        misclassified = [digit for digit in self.digits if digit.prediction != digit.label]
+        misclassified = [digit for digit in self.train_digits if digit.prediction != digit.label]
         print("Misclassified {:d} examples".format(len(misclassified)))
         misclassified = random.sample(misclassified, min(16, len(misclassified)))
         fig = plt.figure(1, (4., 4.))
@@ -95,12 +100,21 @@ class FileHandler:
 
         plt.show()
 
+    def write_predictions(self, write_filename='data/predictions.csv'):
+        """ Loads the test data set and writes predictions in the manner
+        directed by http://www.kaggle.com/c/digit-recognizer/data
+        """
+        predictions = list(self.rf_clf.predict(self.features('test')))
+        with open(write_filename, 'w') as buff:
+            buff.write("\n".join(map(str, predictions)))
+
 
 class Digit:
     def __init__(self, data, digit_label=None):
         self.data = data
         self.label = digit_label
         self.prediction = "None"
+        self.decision_function = None
 
     def __repr__(self):
         if self.label:
@@ -136,14 +150,15 @@ def train_model():
     """Returns a trained classifier
     """
     data = get_data.get_data_files()
-    files = FileHandler(data['train'])
+    files = FileHandler(data['train'], data['test'])
     return files.rf_clf
 
 
 def __main():
     data = get_data.get_data_files()
-    files = FileHandler(data['train'])
+    files = FileHandler(data['train'], data['test'])
     files.show_bad_classifiers()
+    files.write_predictions()
 
 
 if __name__ == '__main__':
