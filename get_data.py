@@ -12,19 +12,54 @@ __author__ = 'colinc'
 #This file should live in the top level directory, or else this line should change
 PREFIX = os.path.dirname(os.path.abspath(__file__))
 
-CREDFILE = ".creds"
-DATAFILES = [
-    {
-        "name": "train",
-        "url": "http://www.kaggle.com/c/digit-recognizer/download/train.csv",
-        "filename": "train.csv"
-    },
-    {
-        "name": "test",
-        "url": "http://www.kaggle.com/c/digit-recognizer/download/test.csv",
-        "filename": "test.csv"
-    },
-]
+CREDFILE = "../.creds"
+DATAFILES = {'mnist':
+                 [
+                     {
+                         "name": "train",
+                         "url": "http://www.kaggle.com/c/digit-recognizer/download/train.csv",
+                         "filename": "train.csv"
+                     },
+                     {
+                         "name": "test",
+                         "url": "http://www.kaggle.com/c/digit-recognizer/download/test.csv",
+                         "filename": "test.csv"
+                     },
+                 ],
+             'march_madness':
+                 [
+                     {
+                         "name": "regular_season_results",
+                         "url": "http://www.kaggle.com/c/march-machine-learning-madness/download/regular_season_results.csv",
+                         "filename": "regular_season_results.csv"
+                     },
+                     {
+                         "name": "seasons",
+                         "url": "http://www.kaggle.com/c/march-machine-learning-madness/download/seasons.csv",
+                         "filename": "seasons.csv"
+                     },
+                     {
+                         "name": "teams",
+                         "url": "http://www.kaggle.com/c/march-machine-learning-madness/download/teams.csv",
+                         "filename": "teams.csv"
+                     },
+                     {
+                         "name": "tourney_results",
+                         "url": "http://www.kaggle.com/c/march-machine-learning-madness/download/tourney_results.csv",
+                         "filename": "tourney_results.csv"
+                     },
+                     {
+                         "name": "tourney_seeds",
+                         "url": "http://www.kaggle.com/c/march-machine-learning-madness/download/tourney_seeds.csv",
+                         "filename": "tourney_seeds.csv"
+                     },
+                     {
+                         "name": "tourney_slots",
+                         "url": "http://www.kaggle.com/c/march-machine-learning-madness/download/tourney_slots.csv",
+                         "filename": "tourney_slots.csv"
+                     },
+                 ]
+}
 
 
 def get_data_file(url, filename):
@@ -57,19 +92,20 @@ def get_data_file(url, filename):
             buff.write(block)
 
 
-def get_data_files():
+def get_data_files(project_name):
     """ Downloads data files located in the pseudo JSON up in DATAFILES.  Also
     creates a folder to store all the data.  Returns a dictionary of 'name' to
     'filename' (which is all fancied up so you can just call open(filename) on
-    it).
+    it).  The project_name should be the python project folder name.
     """
-    if not os.path.exists(os.path.join(PREFIX, 'data')):
-        os.mkdir(os.path.join(PREFIX, 'data'))
-    for data_file in DATAFILES:
-        filename = os.path.join(PREFIX, 'data', data_file['filename'])
+    if not os.path.exists(os.path.join(PREFIX, project_name, 'data')):
+        os.mkdir(os.path.join(PREFIX, project_name, 'data'))
+    for data_file in DATAFILES[project_name]:
+        filename = os.path.join(PREFIX, project_name, 'data', data_file['filename'])
         if not os.path.exists(filename):
             get_data_file(data_file['url'], filename)
-    return {filename['name']: os.path.join(PREFIX, 'data', filename['filename']) for filename in DATAFILES}
+    return {filename['name']: os.path.join(PREFIX, project_name, 'data', filename['filename']) for filename in
+            DATAFILES[project_name]}
 
 
 def __main():

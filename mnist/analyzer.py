@@ -1,5 +1,6 @@
 import random
 import sys
+import get_data
 
 __author__ = 'colinc'
 
@@ -9,10 +10,7 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.linear_model import LogisticRegression
 from mpl_toolkits.axes_grid1 import ImageGrid
 
-import get_data
-
 MNIST_SIZE = (28, 28)
-
 
 class FileHandler:
     """ A class that will read in a data filename, and hold onto training examples
@@ -70,7 +68,7 @@ class FileHandler:
         """ Trains and returns a random forest classifier
         """
         if not self._rf_clf:
-            self._rf_clf = RandomForestClassifier(n_estimators=100, oob_score=True)
+            self._rf_clf = RandomForestClassifier(n_estimators=10, oob_score=True)
             self._rf_clf = self._rf_clf.fit(self.features(), self.labels)
         return self._rf_clf
 
@@ -100,13 +98,15 @@ class FileHandler:
 
         plt.show()
 
-    def write_predictions(self, write_filename='data/predictions.csv'):
+    def write_predictions(self, write_filename='mnist/data/predictions.csv'):
         """ Loads the test data set and writes predictions in the manner
         directed by http://www.kaggle.com/c/digit-recognizer/data
         """
         predictions = list(self.rf_clf.predict(self.features('test')))
         with open(write_filename, 'w') as buff:
-            buff.write("\n".join(map(str, predictions)))
+            buff.write("ImageId,Label\n")
+            for j, prediction in enumerate(predictions):
+                buff.write("{:d},{:d}\n".format(j + 1, prediction))
 
 
 class Digit:
@@ -149,15 +149,15 @@ def normalize(matrix):
 def train_model():
     """Returns a trained classifier
     """
-    data = get_data.get_data_files()
+    data = get_data.get_data_files('mnist')
     files = FileHandler(data['train'], data['test'])
     return files.rf_clf
 
 
 def __main():
-    data = get_data.get_data_files()
+    data = get_data.get_data_files('mnist')
     files = FileHandler(data['train'], data['test'])
-    files.show_bad_classifiers()
+    print(files.rf_clf)
     files.write_predictions()
 
 
