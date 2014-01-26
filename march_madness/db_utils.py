@@ -6,11 +6,26 @@ import get_data
 
 __author__ = 'colinc'
 PROJECT = 'march_madness'
-DB_FILE = os.path.join(PROJECT, 'data', 'data.db')
+DB_FILE = os.path.join(get_data.PREFIX, PROJECT, 'data', 'data.db')
+print(DB_FILE)
+
+
+def create_insert(filename, table_name):
+    """ Creates an insert statement for the file
+    """
+
+    with open(filename) as buff:
+        reader = csv.DictReader(buff)
+        cols = len(reader.fieldnames)
+
+    insert_statement = """INSERT INTO {:s} VALUES ({:s})""".format(table_name, ",".join("?" for _ in range(cols)))
+    return insert_statement
+
 
 def create_schema(filename, table_name):
     """ Tries to create a sqlite3 schema on the fly from a csv
     """
+
     def get_data_type(data_str):
         """ Automatically detects if a string is an integer, real, or text for parsing csvs
         into sqlite database
@@ -31,26 +46,28 @@ def create_schema(filename, table_name):
             if j > 100:
                 break
             for field, val in row.iteritems():
-                if data_tree[get_data_type(field)] > data_tree[types[field]]:
-                    types[field] = get_data_type(field)
+                if data_tree[get_data_type(val)] > data_tree[types[field]]:
+                    types[field] = get_data_type(val)
     data_types = ", ".join("{:s} {:s}".format(field, types[field]) for field in reader.fieldnames)
     schema = """ CREATE TABLE {:s} ({:s})""".format(table_name, data_types)
     return schema
 
 
-
 def create_db():
-
     conn = sqlite3.connect(DB_FILE)
     cur = conn.cursor()
     data_files = get_data.get_data_files(PROJECT)
-    for name, data_file in data_files.iteritems():
-        with open(data_file) as buff:
-            reader = csv.DictReader(buff)
-            cur.execute("""CREATE TABLE {:s}reader.fieldnames""")
+    for table_name, filename in data_files.iteritems():
+        schema = create_schema(filename, table_name)
+        insert_statement = create_insert(filename, table_name)
+        cur.execute(schema)
+        with open(filename) as buff:
+            data = [row.split(',') for row in buff]
+        cur.executemany(insert_statement, data)
+
 
 def __main():
-    print get_data.get_data_files(PROJECT)
+    create_db()
 
 
 if __name__ == '__main__':
