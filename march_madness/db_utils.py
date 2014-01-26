@@ -73,11 +73,23 @@ def create_db(force_reload=False):
         cur.execute(schema)
         with open(filename) as buff:
             buff.next()
-            data = [row.split(',') for row in buff]
+            data = [[j.strip() for j in row.split(',')] for row in buff]
         cur.executemany(insert_statement, data)
     conn.commit()
     conn.close()
     return DB_FILE
+
+
+def run_query(sql):
+    """ Convenience function to query a dataset
+    """
+    conn = sqlite3.connect(DB_FILE)
+    conn.row_factory = sqlite3.Row
+    cur = conn.cursor()
+    cur.execute(sql)
+    results = cur.fetchall()
+    conn.close()
+    return map(dict, results)
 
 
 def __main():
