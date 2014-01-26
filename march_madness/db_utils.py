@@ -7,7 +7,6 @@ import get_data
 __author__ = 'colinc'
 PROJECT = 'march_madness'
 DB_FILE = os.path.join(get_data.PREFIX, PROJECT, 'data', 'data.db')
-print(DB_FILE)
 
 
 def create_insert(filename, table_name):
@@ -53,7 +52,18 @@ def create_schema(filename, table_name):
     return schema
 
 
-def create_db():
+def create_db(force_reload=False):
+    """ Checks whether an sqlite database exists, or else creates one and
+    returns the location
+    """
+    if force_reload:
+        try:
+            os.remove(DB_FILE)
+        except OSError:
+            pass
+    if os.path.exists(DB_FILE):
+        return DB_FILE
+
     conn = sqlite3.connect(DB_FILE)
     cur = conn.cursor()
     data_files = get_data.get_data_files(PROJECT)
@@ -62,12 +72,16 @@ def create_db():
         insert_statement = create_insert(filename, table_name)
         cur.execute(schema)
         with open(filename) as buff:
+            buff.next()
             data = [row.split(',') for row in buff]
         cur.executemany(insert_statement, data)
+    conn.commit()
+    conn.close()
+    return DB_FILE
 
 
 def __main():
-    create_db()
+    create_db(True)
 
 
 if __name__ == '__main__':
