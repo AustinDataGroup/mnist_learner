@@ -65,9 +65,9 @@ def create_db(force_reload=False):
     if os.path.exists(DB_FILE):
         return DB_FILE
 
+    data_files = get_data.get_data_files(PROJECT)
     conn = sqlite3.connect(DB_FILE)
     cur = conn.cursor()
-    data_files = get_data.get_data_files(PROJECT)
     for table_name, filename in data_files.iteritems():
         schema = create_schema(filename, table_name)
         insert_statement = create_insert(filename, table_name)
