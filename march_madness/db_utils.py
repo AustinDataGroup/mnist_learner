@@ -30,7 +30,8 @@ def create_schema(filename, table_name):
         into sqlite database
         """
         try:
-            if int(data_str) == float(data_str):
+            num = float(data_str)
+            if int(num) == float(num):
                 return "integer"
             return "real"
         except ValueError:

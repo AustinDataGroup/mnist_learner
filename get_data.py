@@ -58,6 +58,21 @@ DATAFILES = {'mnist':
                          "url": "http://www.kaggle.com/c/march-machine-learning-madness/download/tourney_slots.csv",
                          "filename": "tourney_slots.csv"
                      },
+                     {
+                         "name": "ordinal_ranks_core_33",
+                         "url": "http://www.kaggle.com/blobs/download/forum-message-attachment-files/999/ordinal_ranks_core_33.csv",
+                         "filename": "ordinal_ranks_core_33.csv"
+                     },
+                     {
+                         "name": "ordinal_ranks_non_core",
+                         "url": "http://www.kaggle.com/blobs/download/forum-message-attachment-files/1000/ordinal_ranks_non_core.csv",
+                         "filename": "ordinal_ranks_non_core.csv"
+                     },
+                     {
+                         "name": "sagp_weekly_ratings",
+                         "url": "http://www.kaggle.com/blobs/download/forum-message-attachment-files/990/sagp_weekly_ratings.csv",
+                         "filename": "sagp_weekly_ratings.csv"
+                     },
                  ]
 }
 
