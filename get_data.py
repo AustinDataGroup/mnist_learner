@@ -125,7 +125,8 @@ def get_data_files(project_name):
 def __main():
     """ For running from the command line
     """
-    print(get_data_files('march_madness'))
+    for project in DATAFILES.keys():
+        print(get_data_files(project))
 
 
 if __name__ == '__main__':
