@@ -12,68 +12,67 @@ __author__ = 'colinc'
 #This file should live in the top level directory, or else this line should change
 PREFIX = os.path.dirname(os.path.abspath(__file__))
 
-CREDFILE = "../.creds"
-DATAFILES = {'mnist':
-                 [
-                     {
-                         "name": "train",
-                         "url": "http://www.kaggle.com/c/digit-recognizer/download/train.csv",
-                         "filename": "train.csv"
-                     },
-                     {
-                         "name": "test",
-                         "url": "http://www.kaggle.com/c/digit-recognizer/download/test.csv",
-                         "filename": "test.csv"
-                     },
-                 ],
-             'march_madness':
-                 [
-                     {
-                         "name": "regular_season_results",
-                         "url": "http://www.kaggle.com/c/march-machine-learning-madness/download/regular_season_results.csv",
-                         "filename": "regular_season_results.csv"
-                     },
-                     {
-                         "name": "seasons",
-                         "url": "http://www.kaggle.com/c/march-machine-learning-madness/download/seasons.csv",
-                         "filename": "seasons.csv"
-                     },
-                     {
-                         "name": "teams",
-                         "url": "http://www.kaggle.com/c/march-machine-learning-madness/download/teams.csv",
-                         "filename": "teams.csv"
-                     },
-                     {
-                         "name": "tourney_results",
-                         "url": "http://www.kaggle.com/c/march-machine-learning-madness/download/tourney_results.csv",
-                         "filename": "tourney_results.csv"
-                     },
-                     {
-                         "name": "tourney_seeds",
-                         "url": "http://www.kaggle.com/c/march-machine-learning-madness/download/tourney_seeds.csv",
-                         "filename": "tourney_seeds.csv"
-                     },
-                     {
-                         "name": "tourney_slots",
-                         "url": "http://www.kaggle.com/c/march-machine-learning-madness/download/tourney_slots.csv",
-                         "filename": "tourney_slots.csv"
-                     },
-                     {
-                         "name": "ordinal_ranks_core_33",
-                         "url": "http://www.kaggle.com/blobs/download/forum-message-attachment-files/999/ordinal_ranks_core_33.csv",
-                         "filename": "ordinal_ranks_core_33.csv"
-                     },
-                     {
-                         "name": "ordinal_ranks_non_core",
-                         "url": "http://www.kaggle.com/blobs/download/forum-message-attachment-files/1000/ordinal_ranks_non_core.csv",
-                         "filename": "ordinal_ranks_non_core.csv"
-                     },
-                     {
-                         "name": "sagp_weekly_ratings",
-                         "url": "http://www.kaggle.com/blobs/download/forum-message-attachment-files/990/sagp_weekly_ratings.csv",
-                         "filename": "sagp_weekly_ratings.csv"
-                     },
-                 ]
+CREDFILE = ".creds"
+DATAFILES = {
+    'mnist': [
+        {
+            "name": "train",
+            "url": "http://www.kaggle.com/c/digit-recognizer/download/train.csv",
+            "filename": "train.csv"
+        },
+        {
+            "name": "test",
+            "url": "http://www.kaggle.com/c/digit-recognizer/download/test.csv",
+            "filename": "test.csv"
+        },
+    ],
+    'march_madness': [
+        {
+            "name": "regular_season_results",
+            "url": "http://www.kaggle.com/c/march-machine-learning-madness/download/regular_season_results.csv",
+            "filename": "regular_season_results.csv"
+        },
+        {
+            "name": "seasons",
+            "url": "http://www.kaggle.com/c/march-machine-learning-madness/download/seasons.csv",
+            "filename": "seasons.csv"
+        },
+        {
+            "name": "teams",
+            "url": "http://www.kaggle.com/c/march-machine-learning-madness/download/teams.csv",
+            "filename": "teams.csv"
+        },
+        {
+            "name": "tourney_results",
+            "url": "http://www.kaggle.com/c/march-machine-learning-madness/download/tourney_results.csv",
+            "filename": "tourney_results.csv"
+        },
+        {
+            "name": "tourney_seeds",
+            "url": "http://www.kaggle.com/c/march-machine-learning-madness/download/tourney_seeds.csv",
+            "filename": "tourney_seeds.csv"
+        },
+        {
+            "name": "tourney_slots",
+            "url": "http://www.kaggle.com/c/march-machine-learning-madness/download/tourney_slots.csv",
+            "filename": "tourney_slots.csv"
+        },
+        {
+            "name": "ordinal_ranks_core_33",
+            "url": "http://www.kaggle.com/blobs/download/forum-message-attachment-files/999/ordinal_ranks_core_33.csv",
+            "filename": "ordinal_ranks_core_33.csv"
+        },
+        {
+            "name": "ordinal_ranks_non_core",
+            "url": "http://www.kaggle.com/blobs/download/forum-message-attachment-files/1000/ordinal_ranks_non_core.csv",
+            "filename": "ordinal_ranks_non_core.csv"
+        },
+        {
+            "name": "sagp_weekly_ratings",
+            "url": "http://www.kaggle.com/blobs/download/forum-message-attachment-files/990/sagp_weekly_ratings.csv",
+            "filename": "sagp_weekly_ratings.csv"
+        },
+    ]
 }
 
 
@@ -126,7 +125,7 @@ def get_data_files(project_name):
 def __main():
     """ For running from the command line
     """
-    print(get_data_files())
+    print(get_data_files('march_madness'))
 
 
 if __name__ == '__main__':

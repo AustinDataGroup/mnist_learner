@@ -2,6 +2,7 @@ import os
 import sys
 import sqlite3
 import csv
+import numpy as np
 import get_data
 
 __author__ = 'colinc'
@@ -99,3 +100,81 @@ def __main():
 
 if __name__ == '__main__':
     sys.exit(__main())
+
+
+def get_seasons():
+    """ Returns a list of dictionaries with info about the season.
+    """
+    return run_query("SELECT * FROM seasons")
+
+
+def pagerank(a_matrix):
+    """ Computes the eigenvalues of a matrix
+    """
+    v_new = np.ones((a_matrix.shape[0],)) / a_matrix.shape[0]
+    v = np.zeros(v_new.shape)
+    while np.linalg.norm(v - v_new) > 0.000001:
+        v = v_new
+        v_new = np.dot(a_matrix, v)
+        v_new /= sum(v_new)
+    return v_new
+
+
+def get_season_seeds(season):
+    sql = """
+            SELECT
+                seed,
+                team
+            FROM
+                tourney_seeds
+            WHERE
+                season = '{:s}'""".format(season)
+    return run_query(sql)
+
+
+def get_season_results(season):
+    sql = """
+            SELECT
+                season,
+                daynum,
+                wteam,
+                wscore,
+                lteam,
+                lscore,
+                wloc,
+                numot
+            FROM
+                regular_season_results
+            WHERE
+                season = '{:s}'""".format(season)
+    results = run_query(sql)
+    return results
+
+
+def get_season_teams(season):
+    sql = """ SELECT
+                t.id AS id,
+                s.team AS team,
+                t.name AS name
+              FROM
+                (SELECT
+                    wteam AS team
+                  FROM
+                    regular_season_results
+                  WHERE
+                    season = "{0:s}"
+                  UNION SELECT
+                    lteam AS team
+                  FROM
+                    regular_season_results
+                  WHERE
+                    season = "{0:s}") s
+              JOIN
+                teams t
+              ON
+                s.team = t.id
+              GROUP BY
+                s.team
+    """.format(season)
+    teams = run_query(sql)
+    return teams

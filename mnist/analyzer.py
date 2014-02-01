@@ -12,6 +12,7 @@ from mpl_toolkits.axes_grid1 import ImageGrid
 
 MNIST_SIZE = (28, 28)
 
+
 class FileHandler:
     """ A class that will read in a data filename, and hold onto training examples
     """
