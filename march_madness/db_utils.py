@@ -2,7 +2,6 @@ import os
 import sys
 import sqlite3
 import csv
-import numpy as np
 import get_data
 
 __author__ = 'colinc'
@@ -94,30 +93,10 @@ def run_query(sql):
     return map(dict, results)
 
 
-def __main():
-    create_db(True)
-
-
-if __name__ == '__main__':
-    sys.exit(__main())
-
-
 def get_seasons():
     """ Returns a list of dictionaries with info about the season.
     """
     return run_query("SELECT * FROM seasons")
-
-
-def pagerank(a_matrix):
-    """ Computes the eigenvalues of a matrix
-    """
-    v_new = np.ones((a_matrix.shape[0],)) / a_matrix.shape[0]
-    v = np.zeros(v_new.shape)
-    while np.linalg.norm(v - v_new) > 0.000001:
-        v = v_new
-        v_new = np.dot(a_matrix, v)
-        v_new /= sum(v_new)
-    return v_new
 
 
 def get_season_seeds(season):
@@ -151,10 +130,34 @@ def get_season_results(season):
     return results
 
 
+def get_season_losses(season):
+    sql = """SELECT
+                lteam AS team_id,
+                COUNT(*) AS losses
+            FROM
+                regular_season_results
+            WHERE
+                season = '{:s}'
+            GROUP BY
+                lteam""".format(season)
+    return run_query(sql)
+
+
+def get_season_wins(season):
+    sql = """SELECT
+                wteam AS team_id,
+                COUNT(*) AS wins
+            FROM
+                regular_season_results
+            WHERE
+                season = '{:s}'
+            GROUP BY
+                wteam""".format(season)
+    return run_query(sql)
+
 def get_season_teams(season):
     sql = """ SELECT
-                t.id AS id,
-                s.team AS team,
+                t.id AS team_id,
                 t.name AS name
               FROM
                 (SELECT
@@ -178,3 +181,13 @@ def get_season_teams(season):
     """.format(season)
     teams = run_query(sql)
     return teams
+
+
+def __main():
+    create_db(True)
+
+
+if __name__ == '__main__':
+    sys.exit(__main())
+
+
