@@ -1,8 +1,10 @@
 import re
 import sys
-
 import numpy as np
+import sklearn.ensemble
+import sklearn.linear_model
 import march_madness.db_utils
+import random
 
 
 __author__ = 'colinc'
@@ -72,6 +74,35 @@ class SeasonHandler:
         for seed in seeds:
             self.teams[seed['team']].set_seed_bracket(seed['seed'])
 
+    def tournament_games(self):
+        """ Gets a list of tournament info for training (team_one_id, team_two_id, winning_team_id)
+        """
+        train_data = [[j['winteam'], j['loseteam']] for j in
+                      march_madness.db_utils.get_tournament_training_data(self.season)]
+        labels = [game[0] for game in train_data]
+        map(random.shuffle, train_data)
+        labels = [int(labels[j] == train_data[j][0]) for j in range(len(labels))]
+        features = [self.get_matchup_features(self.teams[game[0]], self.teams[game[1]]) for game in train_data]
+        return features, labels
+
+    def get_matchup_features(self, team_one, team_two):
+        """ Collects features from two teams and information about their past meetings to return one matchup vector
+        """
+        matchups = march_madness.db_utils.get_matchups(self.season, team_one, team_two)
+        team_one_wins = len([j for j in matchups if team_one.id == j['winteam']])
+        team_two_wins = len(matchups) - team_one_wins
+        return team_one.features + team_two.features + [team_one_wins, team_two_wins]
+
+    def predict(self, model):
+        """ Determines model error on the given season
+        """
+        features, labels = self.tournament_games()
+        predictions = model.predict(features)
+        n_right = sum(predictions == np.array(labels))
+        tot = len(labels)
+        pct_right = float(n_right) / float(tot)
+        print("{:.2f}% accuracy ({:d} out of {:d})".format(pct_right, n_right, tot))
+
 
 class Team:
     def __init__(self, season, team_id, name):
@@ -100,6 +131,16 @@ class Team:
             raise ValueError("Can't find seed and string for %s", seed_string)
 
     @property
+    def features(self):
+        return [
+            np.exp(self.seed - 8),
+            self.wins,
+            self.losses,
+            self.pagerank,
+            self.win_perc,
+        ]
+
+    @property
     def seed(self):
         return self._seed
 
@@ -122,10 +163,6 @@ class Team:
     def win_perc(self):
         return float(self.wins) / float(self.wins + self.losses)
 
-    @property
-    def features(self):
-        return self.wins, self.losses, self.win_perc
-
     def set_pagerank(self, rank):
         self._pagerank = rank
 
@@ -135,10 +172,20 @@ class Team:
 
 
 def __main():
-    s = SeasonHandler("R")
-    for j, t in enumerate(sorted(s.teams.values(), key=lambda j: j.pagerank, reverse=True)[:16]):
-        print("{:d}. {:s}: {:d}-{:d} {:.1f}%, ({:.3f}), {:s}{:s}".format(j+1, t.name, t.wins, t.losses, 100 * t.win_perc, t.pagerank,
-                                                         str(t.seed), str(t.bracket)))
+    seasons = march_madness.db_utils.get_seasons()
+    features, labels = [], []
+    model = None
+    for season in seasons[:-1]:
+        print("{:s} season:".format(season['years']))
+        s = SeasonHandler(season['season'])
+        if model:
+            s.predict(model)
+        season_features, season_labels = s.tournament_games()
+        features += season_features
+        labels += season_labels
+        model = sklearn.linear_model.LogisticRegression(fit_intercept=False)
+        model.fit(np.array(features), np.array(labels))
+    print model.coef_
 
 
 if __name__ == '__main__':

@@ -155,6 +155,39 @@ def get_season_wins(season):
                 wteam""".format(season)
     return run_query(sql)
 
+
+def get_matchups(season, team_one, team_two):
+    sql = """ SELECT
+                wteam as winteam,
+                lteam as loseteam,
+                wscore as winscore,
+                lscore as losescore
+              FROM
+                regular_season_results
+              WHERE
+                wteam in ({0:d}, {1:d})
+              AND
+                lteam in ({0:d}, {1:d})
+              AND
+                season = '{2:s}'
+    """.format(team_one.id, team_two.id, season)
+    results = run_query(sql)
+    return results
+
+
+def get_tournament_training_data(season):
+    sql = """SELECT
+                wteam as winteam,
+                lteam as loseteam
+            FROM
+                tourney_results
+            WHERE
+                season = '{:s}';
+                """.format(season)
+    training_data = run_query(sql)
+    return training_data
+
+
 def get_season_teams(season):
     sql = """ SELECT
                 t.id AS team_id,
