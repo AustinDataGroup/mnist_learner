@@ -22,6 +22,20 @@ def pagerank(a_matrix):
     return v_new
 
 
+def make_extra_features(features):
+    """ Takes a feature vector and returns n(n+1)/2 new features,
+    corresponding to all products of two of the original features
+    """
+    new_features = []
+    for feature_collection in features:
+        new_features.append([])
+        for j, feature_one in enumerate(feature_collection):
+            new_features[-1].append(feature_one)
+            for feature_two in feature_collection[j:]:
+                new_features[-1].append(feature_one * feature_two)
+    return new_features
+
+
 def get_season_matrix(season):
     """ Creates a matrix for a season, where the (i, j)-th position
     is the average percents of points team i scores in a game against
@@ -83,6 +97,7 @@ class SeasonHandler:
         map(random.shuffle, train_data)
         labels = [int(labels[j] == train_data[j][0]) for j in range(len(labels))]
         features = [self.get_matchup_features(self.teams[game[0]], self.teams[game[1]]) for game in train_data]
+        features = make_extra_features(features)
         return features, labels
 
     def get_matchup_features(self, team_one, team_two):
@@ -91,17 +106,26 @@ class SeasonHandler:
         matchups = march_madness.db_utils.get_matchups(self.season, team_one, team_two)
         team_one_wins = len([j for j in matchups if team_one.id == j['winteam']])
         team_two_wins = len(matchups) - team_one_wins
-        return team_one.features + team_two.features + [team_one_wins, team_two_wins]
+        return team_one.features + team_two.features + [team_one_wins, team_two_wins, team_one.seed - team_two.seed]
 
     def predict(self, model):
         """ Determines model error on the given season
         """
         features, labels = self.tournament_games()
         predictions = model.predict(features)
+        probs = model.predict_proba(features)
+        loss = log_loss(probs, labels)
         n_right = sum(predictions == np.array(labels))
         tot = len(labels)
-        pct_right = float(n_right) / float(tot)
-        print("{:.2f}% accuracy ({:d} out of {:d})".format(pct_right, n_right, tot))
+        pct_right = 100 * float(n_right) / float(tot)
+        print("{:.2f} log loss. {:.2f}% accuracy ({:d} out of {:d})".format(loss, pct_right, n_right, tot))
+        return loss
+
+
+def log_loss(probs, actual):
+    actual = np.array(actual)
+    actual = np.array([1 - actual, actual]).T
+    return -sum((actual * np.log(probs)).flatten()) / probs.shape[0]
 
 
 class Team:
@@ -133,7 +157,7 @@ class Team:
     @property
     def features(self):
         return [
-            np.exp(self.seed - 8),
+            self.seed,
             self.wins,
             self.losses,
             self.pagerank,
@@ -171,22 +195,62 @@ class Team:
         return self._pagerank
 
 
-def __main():
-    seasons = march_madness.db_utils.get_seasons()
-    features, labels = [], []
-    model = None
-    for season in seasons[:-1]:
-        print("{:s} season:".format(season['years']))
-        s = SeasonHandler(season['season'])
-        if model:
-            s.predict(model)
-        season_features, season_labels = s.tournament_games()
-        features += season_features
-        labels += season_labels
-        model = sklearn.linear_model.LogisticRegression(fit_intercept=False)
-        model.fit(np.array(features), np.array(labels))
-    print model.coef_
+class ModelHandler:
+    def __init__(self, model=sklearn.linear_model.LogisticRegression(penalty='l1')):
+        self.__model = model
+        self.__seasons = None
+        self.__features = None
+        self.__labels = None
 
+    @property
+    def seasons(self):
+        if not self.__seasons:
+            self.__seasons = march_madness.db_utils.get_seasons()
+        return self.__seasons
+
+    @property
+    def features(self):
+        if not self.__features:
+            self.get_labels_and_features()
+        return self.__features
+
+    @property
+    def labels(self):
+        if not self.__labels:
+            self.get_labels_and_features()
+        return self.__labels
+
+    @property
+    def model(self):
+        return self.__model
+
+    def get_labels_and_features(self):
+        self.__features, self.__labels = {}, {}
+        for season in self.seasons[:-1]:
+            print("{:s} season:".format(season['years']))
+            season_features, season_labels = SeasonHandler(season['season']).tournament_games()
+            self.__features[season['years']] = season_features
+            self.__labels[season['years']] = season_labels
+
+    def predict(self, season):
+        features = sum((feature for feature_season, feature in self.features.iteritems() if feature_season != season['years']), [])
+        labels = sum((label for label_season, label in self.labels.iteritems() if label_season != season['years']), [])
+        self.model.fit(features, labels)
+        return SeasonHandler(season['season']).predict(self.model)
+
+    def predict_all(self):
+        loss = 0
+        tot = 0
+        for season in self.seasons[:-1]:
+            print("{:s} season:".format(season['years']))
+            loss += self.predict(season)
+            tot += 1
+        print("Avg loss: {:.8f}".format(loss / tot))
+
+
+def __main():
+    m = ModelHandler()
+    m.predict_all()
 
 if __name__ == '__main__':
     sys.exit(__main())
