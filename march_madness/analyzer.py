@@ -84,6 +84,13 @@ class SeasonHandler:
         for team, value in season_pagerank.iteritems():
             self.teams[team].set_pagerank(value)
 
+        season_rankings = march_madness.db_utils.get_season_rankings(season)
+        for ranking in season_rankings:
+            try:
+                self.teams[ranking['team']].add_ranking(ranking['orank'], ranking['rating'])
+            except KeyError:
+                print(ranking)
+
         seeds = march_madness.db_utils.get_season_seeds(self.season)
         for seed in seeds:
             self.teams[seed['team']].set_seed_bracket(seed['seed'])
@@ -95,10 +102,10 @@ class SeasonHandler:
                       march_madness.db_utils.get_tournament_training_data(self.season)]
         labels = [game[0] for game in train_data]
         map(random.shuffle, train_data)
+        game_labels = ["{:s}_{:d}_{:d}".format(self.season, game[0], game[1]) for game in train_data]
         labels = [int(labels[j] == train_data[j][0]) for j in range(len(labels))]
         features = [self.get_matchup_features(self.teams[game[0]], self.teams[game[1]]) for game in train_data]
-        features = make_extra_features(features)
-        return features, labels
+        return features, labels, game_labels
 
     def get_matchup_features(self, team_one, team_two):
         """ Collects features from two teams and information about their past meetings to return one matchup vector
@@ -106,12 +113,12 @@ class SeasonHandler:
         matchups = march_madness.db_utils.get_matchups(self.season, team_one, team_two)
         team_one_wins = len([j for j in matchups if team_one.id == j['winteam']])
         team_two_wins = len(matchups) - team_one_wins
-        return team_one.features + team_two.features + [team_one_wins, team_two_wins, team_one.seed - team_two.seed]
+        return team_one.features + team_two.features + [team_one_wins, team_two_wins]
 
     def predict(self, model):
         """ Determines model error on the given season
         """
-        features, labels = self.tournament_games()
+        features, labels, game_labels = self.tournament_games()
         predictions = model.predict(features)
         probs = model.predict_proba(features)
         loss = log_loss(probs, labels)
@@ -138,9 +145,15 @@ class Team:
         self._pagerank = 0
         self._seed = None
         self._bracket = None
+        self._oranking = None
+        self._rating =  None
 
     def set_wins(self, wins):
         self._wins = wins
+
+    def add_ranking(self, oranking, rating):
+        self._oranking = oranking
+        self._rating = rating
 
     def set_seed_bracket(self, seed_string):
         """Accepts a seed of the form 'W11' and returns W for the bracket and 11 for
@@ -162,7 +175,9 @@ class Team:
             self.losses,
             self.pagerank,
             self.win_perc,
-        ]
+            self._oranking,
+            self._rating,
+            ]
 
     @property
     def seed(self):
@@ -206,7 +221,8 @@ class ModelHandler:
     def seasons(self):
         if not self.__seasons:
             self.__seasons = march_madness.db_utils.get_seasons()
-        return self.__seasons
+        return self.__seasons[6:]
+        #return self.__seasons
 
     @property
     def features(self):
@@ -228,7 +244,7 @@ class ModelHandler:
         self.__features, self.__labels = {}, {}
         for season in self.seasons[:-1]:
             print("{:s} season:".format(season['years']))
-            season_features, season_labels = SeasonHandler(season['season']).tournament_games()
+            season_features, season_labels, _ = SeasonHandler(season['season']).tournament_games()
             self.__features[season['years']] = season_features
             self.__labels[season['years']] = season_labels
 
@@ -241,7 +257,7 @@ class ModelHandler:
     def predict_all(self):
         loss = 0
         tot = 0
-        for season in self.seasons[:-1]:
+        for season in self.seasons[-6:-1]:
             print("{:s} season:".format(season['years']))
             loss += self.predict(season)
             tot += 1

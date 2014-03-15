@@ -156,6 +156,20 @@ def get_season_wins(season):
     return run_query(sql)
 
 
+def get_season_rankings(season):
+    sql = """SELECT
+                team,
+                orank,
+                rating
+            FROM
+                sagp_weekly_ratings
+            WHERE season = '{0:s}'
+            AND
+            rating_day_num = (SELECT MAX(rating_day_num) FROM sagp_weekly_ratings WHERE season = '{0:s}')
+            """.format(season)
+    return run_query(sql)
+
+
 def get_matchups(season, team_one, team_two):
     sql = """ SELECT
                 wteam as winteam,
