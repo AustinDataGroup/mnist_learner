@@ -202,6 +202,17 @@ def get_tournament_training_data(season):
     return training_data
 
 
+def get_tournament_teams(season):
+    sql = """ SELECT
+                team
+              FROM
+                tourney_seeds
+              WHERE
+                season = '{:s}';
+    """.format(season)
+    teams = run_query(sql)
+    return teams
+
 def get_season_teams(season):
     sql = """ SELECT
                 t.id AS team_id,
