@@ -29,32 +29,32 @@ DATAFILES = {
     'march_madness': [
         {
             "name": "regular_season_results",
-            "url": "http://www.kaggle.com/c/march-machine-learning-madness/download/regular_season_results.csv",
+            "url": "https://www.kaggle.com/blobs/download/forum-message-attachment-files/1118/regular_season_results_thru_S_day_132.csv",
             "filename": "regular_season_results.csv"
         },
         {
             "name": "seasons",
-            "url": "http://www.kaggle.com/c/march-machine-learning-madness/download/seasons.csv",
+            "url": "https://www.kaggle.com/c/march-machine-learning-mania/download/seasons.csv",
             "filename": "seasons.csv"
         },
         {
             "name": "teams",
-            "url": "http://www.kaggle.com/c/march-machine-learning-madness/download/teams.csv",
+            "url": "http://www.kaggle.com/c/march-machine-learning-mania/download/teams.csv",
             "filename": "teams.csv"
         },
         {
             "name": "tourney_results",
-            "url": "http://www.kaggle.com/c/march-machine-learning-madness/download/tourney_results.csv",
+            "url": "http://www.kaggle.com/c/march-machine-learning-mania/download/tourney_results.csv",
             "filename": "tourney_results.csv"
         },
         {
             "name": "tourney_seeds",
-            "url": "http://www.kaggle.com/c/march-machine-learning-madness/download/tourney_seeds.csv",
+            "url": "http://www.kaggle.com/c/march-machine-learning-mania/download/tourney_seeds.csv",
             "filename": "tourney_seeds.csv"
         },
         {
             "name": "tourney_slots",
-            "url": "http://www.kaggle.com/c/march-machine-learning-madness/download/tourney_slots.csv",
+            "url": "http://www.kaggle.com/c/march-machine-learning-mania/download/tourney_slots.csv",
             "filename": "tourney_slots.csv"
         },
         {

@@ -36,6 +36,8 @@ def create_schema(filename, table_name):
             return "real"
         except ValueError:
             return "text"
+        except TypeError:
+            print data_str
 
     data_tree = {"integer": 0, "real": 1, "text": 2}
 
@@ -212,6 +214,37 @@ def get_tournament_teams(season):
     """.format(season)
     teams = run_query(sql)
     return teams
+
+
+def get_season_slots(season):
+    sql = """SELECT
+                slot,
+                strongseed,
+                weakseed
+            FROM
+                tourney_slots
+            WHERE
+                season = '{:s}'""".format(season)
+    return run_query(sql)
+
+
+def get_season_tournament_teams(season):
+    sql = """SELECT
+                ts.seed as seed,
+                ts.team as team_id,
+                t.name as name
+            FROM
+                tourney_seeds ts
+            JOIN
+                teams t
+            ON
+                t.id = ts.team
+            WHERE
+                ts.season='{:s}'
+
+    """.format(season)
+    return run_query(sql)
+
 
 def get_season_teams(season):
     sql = """ SELECT

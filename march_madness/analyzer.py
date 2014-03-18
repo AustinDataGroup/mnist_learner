@@ -61,7 +61,9 @@ def pagerank_teams(season):
     I'm using the right adjacency yet...
     """
     result_matrix, index_to_id = get_season_matrix(season)
-    result_matrix /= sum(result_matrix)
+    sums = sum(result_matrix)
+    sums[sums == 0] = 1
+    result_matrix /= sums
     page_rankings = pagerank(result_matrix)
     page_rankings /= page_rankings.max()
     return {index_to_id[j]: page_rankings[j] for j in range(len(page_rankings))}
@@ -103,10 +105,18 @@ class SeasonHandler:
                       march_madness.db_utils.get_tournament_training_data(self.season)]
         labels = [game[0] for game in train_data]
         map(random.shuffle, train_data)
-        game_labels = ["{:s}_{:d}_{:d}".format(self.season, game[0], game[1]) for game in train_data]
         labels = [int(labels[j] == train_data[j][0]) for j in range(len(labels))]
         features = [self.get_matchup_features(self.teams[game[0]], self.teams[game[1]]) for game in train_data]
-        return features, labels, game_labels
+        return features, labels
+
+    def get_tournament_features(self):
+        features, game_labels = [], []
+        tourney_teams = sorted(self.tournament_teams, key=lambda team: team.id)
+        for j, team_one in enumerate(tourney_teams[:-1]):
+            for team_two in tourney_teams[j + 1:]:
+                features.append(self.get_matchup_features(team_one, team_two))
+                game_labels.append("{:s}_{:d}_{:d}".format(self.season, team_one.id, team_two.id))
+        return features
 
     def get_matchup_features(self, team_one, team_two):
         """ Collects features from two teams and information about their past meetings to return one matchup vector
@@ -119,10 +129,12 @@ class SeasonHandler:
     def predict(self, model, scaler):
         """ Determines model error on the given season
         """
-        features, labels, game_labels = self.tournament_games()
-        log_probs = model.predict_log_proba(scaler.transform(features))
-        loss = log_loss(log_probs, labels)
-        return loss
+        features, labels = self.tournament_games()
+        if features:
+            log_probs = model.predict_log_proba(scaler.transform(features))
+            return log_loss(log_probs, labels)
+        else:  # This season has not been played yet
+            return 0
 
     def predict_all(self, model, scaler, pretty=False):
         results = []
@@ -263,7 +275,7 @@ class ModelHandler:
     def get_labels_and_features(self):
         self.__features, self.__labels = {}, {}
         for season in self.seasons[:-1]:
-            season_features, season_labels, _ = SeasonHandler(season['season']).tournament_games()
+            season_features, season_labels = SeasonHandler(season['season']).tournament_games()
             self.__features[season['years']] = season_features
             self.__labels[season['years']] = season_labels
 
@@ -304,31 +316,26 @@ class ModelHandler:
             fit_intercept=False,
             tol=0.000001)
 
-    def print_predictions(self, seasons, pretty=False):
-        if pretty:
-            filename = "data/pretty_preds.csv"
-        else:
-            filename = "data/preds.csv"
+    def print_predictions(self, seasons):
+        filename = "data/{:s}preds_{:s}.csv"
         self.cross_validate()
-        data = []
         for season in seasons:
             print("Predicting the {:s} season".format(season['years']))
             self.predict(season)
-            data += SeasonHandler(season['season']).predict_all(self.model, self.__scaler, pretty)
-            if pretty:
-                filename = "data/pretty_preds_{:s}.csv".format(season['years'])
-                with open(filename, 'wb') as buff:
-                    buff.write("team_one,team_two,team_one_win\n")
-                    buff.write("\n".join([",".join(map(str, row)) for row in data]))
-                data = []
-        if not pretty:
-            with open(filename, 'wb') as buff:
+            s = SeasonHandler(season['season'])
+            data = s.predict_all(self.model, self.__scaler, pretty=True)
+            with open(filename.format("pretty_", season['years']), 'wb') as buff:
+                buff.write("team_one,team_two,team_one_win\n")
+                buff.write("\n".join([",".join(map(str, row)) for row in data]))
+            data = s.predict_all(self.model, self.__scaler, pretty=False)
+            with open(filename.format("", season['years']), 'wb') as buff:
                 buff.write("id,pred\n")
                 buff.write("\n".join([",".join(map(str, row)) for row in data]))
 
+
 def __main():
     m = ModelHandler()
-    m.print_predictions(m.seasons[-6:-1], pretty=True)
+    m.print_predictions([m.seasons[-1]])
 
 
 if __name__ == '__main__':
